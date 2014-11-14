@@ -30,8 +30,9 @@ public class TestActivity extends Activity {
 		setContentView(R.layout.activity_test);
 
 		init();
-		
-	}
+
+
+    }
 
 	private void init() {
 		mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
