@@ -8,11 +8,11 @@ This library is very easy to use:
     	    WiFiConnecter mWiFiConnecter = new WiFiConnecter(mContext);
 		    mWiFiConnecter.connect("ssid", "password", new WiFiConnecter.ActionListener() {
 			@Override
-			public void onStarted() {
+			public void onStarted(String ssid) {
 			}
 
 			@Override
-			public void onSuccess() {
+			public void onSuccess(WifiInfo info) {
 			}
 
 			@Override
@@ -20,7 +20,7 @@ This library is very easy to use:
 			}
 
 			@Override
-			public void onFinished() {
+			public void onFinished(boolean isSuccessed) {
 			}
 
 		});
