@@ -34,13 +34,10 @@ public class TestActivity extends Activity implements ActionListener {
     private void init() {
         mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         mWiFiConnecter = new WiFiConnecter(this);
-
         mDialog = new ProgressDialog(this);
-
         tv_CurrentSsid = (TextView) findViewById(R.id.tv_currentSsid);
         et_Ssid = (EditText) findViewById(R.id.et_ssid);
         et_Password = (EditText) findViewById(R.id.et_password);
-
         et_Ssid.setText("chu");
         et_Password.setText("cyy1234567");
         //Debug only
@@ -48,6 +45,7 @@ public class TestActivity extends Activity implements ActionListener {
         //et_Password.setText("12345678");
         setCurrentSsid();
     }
+
     private void setCurrentSsid() {
         WifiInfo info = mWifiManager.getConnectionInfo();
         String s = (info == null) ? "null" : info.getSSID();

@@ -1,7 +1,5 @@
 package com.android.utils.wificonnecter;
 
-import java.util.List;
-
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -14,6 +12,8 @@ import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+
+import java.util.List;
 
 public class WiFiConnecter {
 
@@ -185,14 +185,14 @@ public class WiFiConnecter {
             if (mRetry < MAX_TRY_COUNT) {
                 mRetry++;
                 isActiveScan = true;
-                //1.打开Wifi
+                //1.open wifi
                 if (!mWifiManager.isWifiEnabled()) {
                     mWifiManager.setWifiEnabled(true);
                 }
-                //TODO startScan什么时候返回false
+                //TODO when startScan return false
                 boolean startScan = mWifiManager.startScan();
                 Log.d(TAG, "startScan:" + startScan);
-                //执行扫描失败（bind机制）
+                //excute scan failed
                 if (!startScan) {
                     if (mListener != null) {
                         mListener.onFailure();
