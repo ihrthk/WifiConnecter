@@ -39,7 +39,7 @@ public class WiFiConnecter {
 
     private boolean isRegistered;
     private boolean isActiveScan;
-    private boolean bySsidIgnoreCase;
+    private boolean ssidIgnoreCase;
 
     public WiFiConnecter(Context context) {
         this.mContext = context;
@@ -61,7 +61,7 @@ public class WiFiConnecter {
 
         context.registerReceiver(mReceiver, mFilter);
         isRegistered = true;
-        bySsidIgnoreCase = true;
+        ssidIgnoreCase = true;
         mScanner = new Scanner();
     }
 
@@ -83,10 +83,7 @@ public class WiFiConnecter {
         }
 
         WifiInfo info = mWifiManager.getConnectionInfo();
-        String quotedString = StringUtils.convertToQuotedString(mSsid);
-        boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(info.getSSID())
-                : quotedString.equals(info.getSSID());
-        if (ssidEquals) {
+        if (isSsidFamiliar(mSsid, info.getSSID())) {
             if (listener != null) {
                 listener.onSuccess(info);
                 listener.onFinished(true);
@@ -104,10 +101,7 @@ public class WiFiConnecter {
             List<ScanResult> results = mWifiManager.getScanResults();
             for (ScanResult result : results) {
                 //1.scan dest of ssid
-                String quotedString = StringUtils.convertToQuotedString(mSsid);
-                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(result.SSID)
-                        : quotedString.equals(result.SSID);
-                if (ssidEquals) {
+                if (isSsidFamiliar(mSsid, result.SSID)) {
                     //TODO ?
                     mScanner.pause();
                     //2.input error password
@@ -128,10 +122,7 @@ public class WiFiConnecter {
             WifiInfo mWifiInfo = mWifiManager.getConnectionInfo();
             //ssid equals&&connected
             if (mWifiInfo != null && mInfo.isConnected() && mWifiInfo.getSSID() != null) {
-                String quotedString = StringUtils.convertToQuotedString(mSsid);
-                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(mWifiInfo.getSSID())
-                        : quotedString.equals(mWifiInfo.getSSID());
-                if (ssidEquals) {
+                if (isSsidFamiliar(mSsid, mWifiInfo.getSSID())) {
                     if (mListener != null) {
                         mListener.onSuccess(mWifiInfo);
                         mListener.onFinished(true);
@@ -141,6 +132,12 @@ public class WiFiConnecter {
 
             }
         }
+    }
+
+    private boolean isSsidFamiliar(String ssid, String other) {
+        String quotedString = StringUtils.convertToQuotedString(ssid);
+        return ssidIgnoreCase ? quotedString.equalsIgnoreCase(other)
+                : quotedString.equals(other);
     }
 
     public void onPause() {
