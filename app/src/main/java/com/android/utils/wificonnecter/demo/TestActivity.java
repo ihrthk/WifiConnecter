@@ -1,4 +1,4 @@
-package com.android.utils.wificonnecter;
+package com.android.utils.wificonnecter.demo;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -11,7 +11,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.utils.wificonnecter.WiFiConnecter.ActionListener;
+import com.android.utils.wificonnecter.demo.WiFiConnecter.ActionListener;
 
 public class TestActivity extends Activity implements ActionListener {
 
@@ -26,7 +26,7 @@ public class TestActivity extends Activity implements ActionListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_test);
+        setContentView(com.android.utils.wificonnecter.R.layout.activity_test);
 
         init();
     }
@@ -35,9 +35,9 @@ public class TestActivity extends Activity implements ActionListener {
         mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         mWiFiConnecter = new WiFiConnecter(this);
         mDialog = new ProgressDialog(this);
-        tv_CurrentSsid = (TextView) findViewById(R.id.tv_currentSsid);
-        et_Ssid = (EditText) findViewById(R.id.et_ssid);
-        et_Password = (EditText) findViewById(R.id.et_password);
+        tv_CurrentSsid = (TextView) findViewById(com.android.utils.wificonnecter.R.id.tv_currentSsid);
+        et_Ssid = (EditText) findViewById(com.android.utils.wificonnecter.R.id.et_ssid);
+        et_Password = (EditText) findViewById(com.android.utils.wificonnecter.R.id.et_password);
         et_Ssid.setText("chu");
         et_Password.setText("cyy1234567");
         //Debug only
@@ -49,7 +49,7 @@ public class TestActivity extends Activity implements ActionListener {
     private void setCurrentSsid() {
         WifiInfo info = mWifiManager.getConnectionInfo();
         String s = (info == null) ? "null" : info.getSSID();
-        tv_CurrentSsid.setText(String.format(getString(R.string.current_ssid), s));
+        tv_CurrentSsid.setText(String.format(getString(com.android.utils.wificonnecter.R.string.current_ssid), s));
     }
 
     public void connect(View view) {

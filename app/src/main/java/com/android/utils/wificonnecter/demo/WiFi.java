@@ -1,4 +1,4 @@
-package com.android.utils.wificonnecter;
+package com.android.utils.wificonnecter.demo;
 
 /*
  * Wifi Connecter

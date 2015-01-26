@@ -1,4 +1,4 @@
-package com.android.utils.wificonnecter;
+package com.android.utils.wificonnecter.demo;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
