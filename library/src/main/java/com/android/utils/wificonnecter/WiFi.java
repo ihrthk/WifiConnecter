@@ -87,7 +87,7 @@ public class WiFi {
      * @return
      */
     public static boolean connectToNewNetwork(final WifiManager wifiMgr, final ScanResult scanResult, final String password) {
-        //1.获取wifi加密方式（WEP, WPA, WPA2, WPA_EAP, IEEE8021X）
+        //1.get wifi type(WEP, WPA, WPA2, WPA_EAP, IEEE8021X)
         final String security = getScanResultSecurity(scanResult);
 
         if (security.equals(OPEN)) {
