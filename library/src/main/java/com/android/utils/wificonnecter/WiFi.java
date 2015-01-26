@@ -1,38 +1,7 @@
 package com.android.utils.wificonnecter;
 
-/*
- * Wifi Connecter
- * 
- * Copyright (c) 20101 Kevin Yuan (farproc@gmail.com)
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- **/
-
-
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiConfiguration.AuthAlgorithm;
-import android.net.wifi.WifiConfiguration.GroupCipher;
-import android.net.wifi.WifiConfiguration.KeyMgmt;
-import android.net.wifi.WifiConfiguration.PairwiseCipher;
-import android.net.wifi.WifiConfiguration.Protocol;
 import android.net.wifi.WifiManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -40,6 +9,9 @@ import android.util.Log;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Created by BSDC-ZLS on 2014/10/29.
+ */
 public class WiFi {
 
     // Constants used for different security types
@@ -67,14 +39,16 @@ public class WiFi {
      * @param newPassword
      * @return
      */
-    public static boolean changePasswordAndConnect(final WifiManager wifiMgr, final WifiConfiguration config, final String newPassword, final int numOpenNetworksKept) {
+    public static boolean changePasswordAndConnect(final WifiManager wifiMgr,
+                                                   final WifiConfiguration config,
+                                                   final String newPassword, final int numOpenNetworksKept) {
         setupSecurity(config, getWifiConfigurationSecurity(config), newPassword);
         final int networkId = wifiMgr.updateNetwork(config);
         if (networkId == -1) {
             // Update failed.
             return false;
         }
-        //确定
+
         return connectToConfiguredNetwork(wifiMgr, config, true);
     }
 
@@ -86,8 +60,8 @@ public class WiFi {
      * @param password   Password for secure network or is ignored.
      * @return
      */
-    public static boolean connectToNewNetwork(final WifiManager wifiMgr, final ScanResult scanResult, final String password) {
-        //1.get wifi type(WEP, WPA, WPA2, WPA_EAP, IEEE8021X)
+    public static boolean connectToNewNetwork(final WifiManager wifiMgr,
+                                              final ScanResult scanResult, final String password) {
         final String security = getScanResultSecurity(scanResult);
 
         if (security.equals(OPEN)) {
@@ -96,7 +70,7 @@ public class WiFi {
         }
 
         WifiConfiguration config = new WifiConfiguration();
-        config.SSID = StringUtils.convertToQuotedString(scanResult.SSID);
+        config.SSID = convertToQuotedString(scanResult.SSID);
         config.BSSID = scanResult.BSSID;
         setupSecurity(config, security, password);
 
@@ -125,7 +99,8 @@ public class WiFi {
      * @param numOpenNetworksKept Settings.Secure.WIFI_NUM_OPEN_NETWORKS_KEPT
      * @return
      */
-    public static boolean connectToConfiguredNetwork(final WifiManager wifiMgr, WifiConfiguration config, boolean reassociate) {
+    public static boolean connectToConfiguredNetwork(final WifiManager wifiMgr,
+                                                     WifiConfiguration config, boolean reassociate) {
         final String security = getWifiConfigurationSecurity(config);
 
         int oldPri = config.priority;
@@ -195,7 +170,8 @@ public class WiFi {
      * @param numOpenNetworksKept
      * @return Operation succeed or not.
      */
-    private static boolean checkForExcessOpenNetworkAndSave(final WifiManager wifiMgr, final int numOpenNetworksKept) {
+    private static boolean checkForExcessOpenNetworkAndSave(final WifiManager wifiMgr,
+                                                            final int numOpenNetworksKept) {
         final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
         sortByPriority(configurations);
 
@@ -246,7 +222,7 @@ public class WiFi {
 
     public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr,
                                                          final ScanResult hotsopt, String hotspotSecurity) {
-        final String ssid = StringUtils.convertToQuotedString(hotsopt.SSID);
+        final String ssid = convertToQuotedString(hotsopt.SSID);
         if (ssid.length() == 0) {
             return null;
         }
@@ -307,29 +283,29 @@ public class WiFi {
     }
 
     /**
-     * @return The security of a given {@link WifiConfiguration}.
+     * @return The security of a given {@link android.net.wifi.WifiConfiguration}.
      */
     static public String getWifiConfigurationSecurity(WifiConfiguration wifiConfig) {
 
-        if (wifiConfig.allowedKeyManagement.get(KeyMgmt.NONE)) {
+        if (wifiConfig.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.NONE)) {
             // If we never set group ciphers, wpa_supplicant puts all of them.
             // For open, we don't set group ciphers.
             // For WEP, we specifically only set WEP40 and WEP104, so CCMP
             // and TKIP should not be there.
-            if (!wifiConfig.allowedGroupCiphers.get(GroupCipher.CCMP)
-                    && (wifiConfig.allowedGroupCiphers.get(GroupCipher.WEP40)
-                    || wifiConfig.allowedGroupCiphers.get(GroupCipher.WEP104))) {
+            if (!wifiConfig.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.CCMP)
+                    && (wifiConfig.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.WEP40)
+                    || wifiConfig.allowedGroupCiphers.get(WifiConfiguration.GroupCipher.WEP104))) {
                 return WEP;
             } else {
                 return OPEN;
             }
-        } else if (wifiConfig.allowedProtocols.get(Protocol.RSN)) {
+        } else if (wifiConfig.allowedProtocols.get(WifiConfiguration.Protocol.RSN)) {
             return WPA2;
-        } else if (wifiConfig.allowedKeyManagement.get(KeyMgmt.WPA_EAP)) {
+        } else if (wifiConfig.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WPA_EAP)) {
             return WPA_EAP;
-        } else if (wifiConfig.allowedKeyManagement.get(KeyMgmt.IEEE8021X)) {
+        } else if (wifiConfig.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X)) {
             return IEEE8021X;
-        } else if (wifiConfig.allowedProtocols.get(Protocol.WPA)) {
+        } else if (wifiConfig.allowedProtocols.get(WifiConfiguration.Protocol.WPA)) {
             return WPA;
         } else {
             Log.w(TAG, "Unknown security type from WifiConfiguration, falling back on open.");
@@ -360,39 +336,33 @@ public class WiFi {
             int wepPasswordType = WEP_PASSWORD_AUTO;
             // If password is empty, it should be left untouched
             if (!TextUtils.isEmpty(password)) {
-                if (wepPasswordType == WEP_PASSWORD_AUTO) {
-                    if (isHexWepKey(password)) {
-                        config.wepKeys[0] = password;
-                    } else {
-                        config.wepKeys[0] = StringUtils.convertToQuotedString(password);
-                    }
+                if (isHexWepKey(password)) {
+                    config.wepKeys[0] = password;
                 } else {
-                    config.wepKeys[0] = wepPasswordType == WEP_PASSWORD_ASCII
-                            ? StringUtils.convertToQuotedString(password)
-                            : password;
+                    config.wepKeys[0] = convertToQuotedString(password);
                 }
             }
 
             config.wepTxKeyIndex = 0;
 
-            config.allowedAuthAlgorithms.set(AuthAlgorithm.OPEN);
-            config.allowedAuthAlgorithms.set(AuthAlgorithm.SHARED);
+            config.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+            config.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.SHARED);
 
-            config.allowedKeyManagement.set(KeyMgmt.NONE);
+            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
 
-            config.allowedGroupCiphers.set(GroupCipher.WEP40);
-            config.allowedGroupCiphers.set(GroupCipher.WEP104);
+            config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
+            config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
 
         } else if (security.equals(WPA) || security.equals(WPA2)) {
-            config.allowedGroupCiphers.set(GroupCipher.TKIP);
-            config.allowedGroupCiphers.set(GroupCipher.CCMP);
+            config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+            config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
 
-            config.allowedKeyManagement.set(KeyMgmt.WPA_PSK);
+            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
 
-            config.allowedPairwiseCiphers.set(PairwiseCipher.CCMP);
-            config.allowedPairwiseCiphers.set(PairwiseCipher.TKIP);
+            config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+            config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
 
-            config.allowedProtocols.set(security.equals(WPA2) ? Protocol.RSN : Protocol.WPA);
+            config.allowedProtocols.set(security.equals(WPA2) ? WifiConfiguration.Protocol.RSN : WifiConfiguration.Protocol.WPA);
 
             // If password is empty, it should be left untouched
             if (!TextUtils.isEmpty(password)) {
@@ -401,22 +371,22 @@ public class WiFi {
                     config.preSharedKey = password;
                 } else {
                     // Goes quoted as ASCII
-                    config.preSharedKey = StringUtils.convertToQuotedString(password);
+                    config.preSharedKey = convertToQuotedString(password);
                 }
             }
 
         } else if (security.equals(OPEN)) {
-            config.allowedKeyManagement.set(KeyMgmt.NONE);
+            config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
         } else if (security.equals(WPA_EAP) || security.equals(IEEE8021X)) {
-            config.allowedGroupCiphers.set(GroupCipher.TKIP);
-            config.allowedGroupCiphers.set(GroupCipher.CCMP);
+            config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+            config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
             if (security.equals(WPA_EAP)) {
-                config.allowedKeyManagement.set(KeyMgmt.WPA_EAP);
+                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
             } else {
-                config.allowedKeyManagement.set(KeyMgmt.IEEE8021X);
+                config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.IEEE8021X);
             }
             if (!TextUtils.isEmpty(password)) {
-                config.preSharedKey = StringUtils.convertToQuotedString(password);
+                config.preSharedKey = convertToQuotedString(password);
             }
         }
     }
@@ -443,10 +413,23 @@ public class WiFi {
         return true;
     }
 
+    private static String convertToQuotedString(String string) {
+        if (TextUtils.isEmpty(string)) {
+            return "";
+        }
+
+        final int lastPos = string.length() - 1;
+        if (lastPos < 0 || (string.charAt(0) == '"' && string.charAt(lastPos) == '"')) {
+            return string;
+        }
+
+        return "\"" + string + "\"";
+    }
+
     static final String[] SECURITY_MODES = {WEP, WPA, WPA2, WPA_EAP, IEEE8021X};
 
     /**
-     * @return The security of a given {@link ScanResult}.
+     * @return The security of a given {@link android.net.wifi.ScanResult}.
      */
     public static String getScanResultSecurity(ScanResult scanResult) {
         final String cap = scanResult.capabilities;

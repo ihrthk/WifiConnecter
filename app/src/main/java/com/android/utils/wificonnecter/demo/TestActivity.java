@@ -36,11 +36,16 @@ public class TestActivity extends Activity implements ActionListener {
         mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         mWiFiConnecter = new WiFiConnecter(this);
         mDialog = new ProgressDialog(this);
+        mDialog.setCanceledOnTouchOutside(false);
         tv_CurrentSsid = (TextView) findViewById(R.id.tv_currentSsid);
         et_Ssid = (EditText) findViewById(R.id.et_ssid);
         et_Password = (EditText) findViewById(R.id.et_password);
-        et_Ssid.setText("chu");
-        et_Password.setText("cyy1234567");
+        et_Ssid.setText("myBabyCam-25B0");
+        et_Password.setText("CC476681");
+
+//        et_Ssid.setText("BASIC_DIR-845L");
+//        et_Password.setText("QAZwsxbsdc707");
+
         //Debug only
         //et_Ssid.setText("OTT_IPTV_3");
         //et_Password.setText("12345678");

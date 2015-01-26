@@ -15,17 +15,19 @@ import android.util.Log;
 
 import java.util.List;
 
+/**
+ * Created by BSDC-ZLS on 2014/10/29.
+ */
 public class WiFiConnecter {
 
     // Combo scans can take 5-6s to complete
-    private static final int WIFI_RESCAN_INTERVAL_MS = 5 * 1000;
+    private static final int WIFI_RESCAN_INTERVAL_MS = 10 * 1000;
 
     static final int SECURITY_NONE = 0;
     static final int SECURITY_WEP = 1;
     static final int SECURITY_PSK = 2;
     static final int SECURITY_EAP = 3;
-    private static final String TAG = WiFiConnecter.class.getSimpleName();
-    public static final int MAX_TRY_COUNT = 3;
+    private static final int MAX_TRY_COUNT = 3;
 
     private Context mContext;
     private WifiManager mWifiManager;
@@ -39,7 +41,6 @@ public class WiFiConnecter {
 
     private boolean isRegistered;
     private boolean isActiveScan;
-    private boolean ssidIgnoreCase;
 
     public WiFiConnecter(Context context) {
         this.mContext = context;
@@ -61,7 +62,6 @@ public class WiFiConnecter {
 
         context.registerReceiver(mReceiver, mFilter);
         isRegistered = true;
-        ssidIgnoreCase = true;
         mScanner = new Scanner();
     }
 
@@ -83,7 +83,7 @@ public class WiFiConnecter {
         }
 
         WifiInfo info = mWifiManager.getConnectionInfo();
-        if (isSsidFamiliar(mSsid, info.getSSID())) {
+        if (info != null && mSsid.equalsIgnoreCase(info.getSSID())) {
             if (listener != null) {
                 listener.onSuccess(info);
                 listener.onFinished(true);
@@ -91,21 +91,25 @@ public class WiFiConnecter {
             return;
         }
 
+        isActiveScan=true;
         mScanner.forceScan();
     }
 
-    private void handleEvent(Context context, Intent intent) {
-        String action = intent.getAction();
-        //An access point scan has completed, and results are available from the supplicant.
-        if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action) && isActiveScan) {
+    private void  handleEvent(Context context, Intent intent) {
+//        String action = ;
+//        Log.d("WiFiConnecter","action:"+action);
+        //TODO zls:Error receiving broadcast Intent { act=android.net.wifi.SCAN_RESULTS flg=0x4000010 }
+        if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction()) && isActiveScan) {
+            isActiveScan=false;
+
             List<ScanResult> results = mWifiManager.getScanResults();
+            Log.d("WiFiConnecter","results:"+results.size());
             for (ScanResult result : results) {
-                //1.scan dest of ssid
-                if (isSsidFamiliar(mSsid, result.SSID)) {
-                    //TODO ?
-                    mScanner.pause();
-                    //2.input error password
-                    if (!WiFi.connectToNewNetwork(mWifiManager, result, mPassword)) {
+                if (mSsid.equalsIgnoreCase(result.SSID)) {
+                    //            mScanner.pause();
+                    boolean newNetwork = WiFi.connectToNewNetwork(mWifiManager, result, mPassword);
+//                    Loger.d("result.SSID=" +result.SSID+"  newNetwork:"+newNetwork);
+                    if (!newNetwork) {
                         if (mListener != null) {
                             mListener.onFailure();
                             mListener.onFinished(false);
@@ -116,28 +120,22 @@ public class WiFiConnecter {
                 }
             }
 
-            //Broadcast intent action indicating that the state of Wi-Fi connectivity has changed.
-        } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
+        } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction())) {
+            //Loger.d("NETWORK_STATE_CHANGED_ACTION");
             NetworkInfo mInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
             WifiInfo mWifiInfo = mWifiManager.getConnectionInfo();
-            //ssid equals&&connected
-            if (mWifiInfo != null && mInfo.isConnected() && mWifiInfo.getSSID() != null) {
-                if (isSsidFamiliar(mSsid, mWifiInfo.getSSID())) {
-                    if (mListener != null) {
-                        mListener.onSuccess(mWifiInfo);
-                        mListener.onFinished(true);
-                    }
-                    onPause();
+            //Loger.d("mInfo:"+mInfo.toString());
+            if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null &&
+                    //很坑，居然返回带双引号的字符
+                    mWifiInfo.getSSID().equalsIgnoreCase("\""+mSsid+"\"")) {
+                if (mListener != null) {
+//                    Loger.d("success");
+                    mListener.onSuccess(mWifiInfo);
+                    mListener.onFinished(true);
                 }
-
+                onPause();
             }
         }
-    }
-
-    private boolean isSsidFamiliar(String ssid, String other) {
-        String quotedString = StringUtils.convertToQuotedString(ssid);
-        return ssidIgnoreCase ? quotedString.equalsIgnoreCase(other)
-                : quotedString.equals(other);
     }
 
     public void onPause() {
@@ -182,28 +180,28 @@ public class WiFiConnecter {
             if (mRetry < MAX_TRY_COUNT) {
                 mRetry++;
                 isActiveScan = true;
-                //1.open wifi
+                //1.打开Wifi
                 if (!mWifiManager.isWifiEnabled()) {
                     mWifiManager.setWifiEnabled(true);
                 }
-                //TODO when startScan return false
+                //TODO startScan什么时候返回false
                 boolean startScan = mWifiManager.startScan();
-                Log.d(TAG, "startScan:" + startScan);
-                //excute scan failed
+                //执行扫描失败（bind机制）
                 if (!startScan) {
                     if (mListener != null) {
                         mListener.onFailure();
-                        mListener.onFinished(false);
+                        mListener.onFinished(true);
                     }
                     onPause();
                     return;
                 }
+                //mRetry>=3
             } else {
                 mRetry = 0;
                 isActiveScan = false;
                 if (mListener != null) {
                     mListener.onFailure();
-                    mListener.onFinished(false);
+                    mListener.onFinished(true);
                 }
                 onPause();
                 return;
@@ -216,14 +214,12 @@ public class WiFiConnecter {
 
         /**
          * The operation started
-         *
          * @param ssid
          */
         public void onStarted(String ssid);
 
         /**
          * The operation succeeded
-         *
          * @param info
          */
         public void onSuccess(WifiInfo info);
@@ -235,10 +231,9 @@ public class WiFiConnecter {
 
         /**
          * The operation finished
-         *
-         * @param isSuccessed
+         * @param b
          */
-        public void onFinished(boolean isSuccessed);
+        public void onFinished(boolean b);
     }
 
 }
