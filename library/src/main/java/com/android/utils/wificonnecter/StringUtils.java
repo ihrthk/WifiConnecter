@@ -1,4 +1,4 @@
-package com.android.utils.wificonnecter.demo;
+package com.android.utils.wificonnecter;
 
 import android.text.TextUtils;
 
