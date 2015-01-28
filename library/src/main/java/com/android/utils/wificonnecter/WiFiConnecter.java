@@ -180,13 +180,13 @@ public class WiFiConnecter {
             if (mRetry < MAX_TRY_COUNT) {
                 mRetry++;
                 isActiveScan = true;
-                //1.打开Wifi
+                //1.open Wifi
                 if (!mWifiManager.isWifiEnabled()) {
                     mWifiManager.setWifiEnabled(true);
                 }
-                //TODO startScan什么时候返回false
+                //TODO startScan return false?
                 boolean startScan = mWifiManager.startScan();
-                //执行扫描失败（bind机制）
+                // exe scan fail(bind mechanism)
                 if (!startScan) {
                     if (mListener != null) {
                         mListener.onFailure();
