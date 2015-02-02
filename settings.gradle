@@ -1,1 +1,1 @@
-include ':app', ':library', ':android-wifi-connecter'
+include ':app', ':library'

@@ -11,6 +11,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.util.Log;
 
 import com.farproc.wifi.connecter.Wifi;
@@ -23,12 +24,8 @@ import java.util.List;
 public class WiFiConnecter {
 
     // Combo scans can take 5-6s to complete
-    private static final int WIFI_RESCAN_INTERVAL_MS = 10 * 1000;
+    private static final int WIFI_RESCAN_INTERVAL_MS = 5 * 1000;
 
-    static final int SECURITY_NONE = 0;
-    static final int SECURITY_WEP = 1;
-    static final int SECURITY_PSK = 2;
-    static final int SECURITY_EAP = 3;
     private static final int MAX_TRY_COUNT = 3;
 
     private Context mContext;
@@ -93,34 +90,29 @@ public class WiFiConnecter {
             return;
         }
 
-        isActiveScan=true;
+        isActiveScan = true;
         mScanner.forceScan();
     }
 
-    private void  handleEvent(Context context, Intent intent) {
+    private void handleEvent(Context context, Intent intent) {
 //        String action = ;
 //        Log.d("WiFiConnecter","action:"+action);
         //TODO zls:Error receiving broadcast Intent { act=android.net.wifi.SCAN_RESULTS flg=0x4000010 }
         if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction()) && isActiveScan) {
-            isActiveScan=false;
+            isActiveScan = false;
 
             List<ScanResult> results = mWifiManager.getScanResults();
-            Log.d("WiFiConnecter","results:"+results.size());
+            Log.d("WiFiConnecter", "results:" + results.size());
             for (ScanResult result : results) {
                 if (mSsid.equalsIgnoreCase(result.SSID)) {
                     //            mScanner.pause();
-
-//                    final WifiConfiguration config = Wifi.getWifiConfiguration(mWifiManager, mScanResult, mScanResultSecurity);
-                    boolean connResult = false;
-//                    if (config != null) {
-                        connResult = Wifi.connectToConfiguredNetwork(null, mWifiManager, null, false);
-//                    }
-                    if (!connResult) {
-//                        Toast.makeText(mFloating, R.string.toastFailed, Toast.LENGTH_LONG).show();
-                    }
-                    boolean newNetwork = WiFi.connectToNewNetwork(mWifiManager, result, mPassword);
+                    int mNumOpenNetworksKept = Settings.Secure.getInt(context.getContentResolver(),
+                            Settings.Secure.WIFI_NUM_OPEN_NETWORKS_KEPT, 10);
+                    //refer:https://code.google.com/p/android-wifi-connecter/
+                    boolean connResult = Wifi.connectToNewNetwork(context, mWifiManager,
+                            result, mPassword, mNumOpenNetworksKept);
 //                    Loger.d("result.SSID=" +result.SSID+"  newNetwork:"+newNetwork);
-                    if (!newNetwork) {
+                    if (!connResult) {
                         if (mListener != null) {
                             mListener.onFailure();
                             mListener.onFinished(false);
@@ -137,8 +129,8 @@ public class WiFiConnecter {
             WifiInfo mWifiInfo = mWifiManager.getConnectionInfo();
             //Loger.d("mInfo:"+mInfo.toString());
             if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null &&
-                    //很坑，居然返回带双引号的字符
-                    mWifiInfo.getSSID().equalsIgnoreCase("\""+mSsid+"\"")) {
+                    //nexus 5 have quote,sumsang don't have quote
+                    (mWifiInfo.getSSID().equals(mSsid) || mWifiInfo.getSSID().equals("\"" + mSsid + "\""))) {
                 if (mListener != null) {
 //                    Loger.d("success");
                     mListener.onSuccess(mWifiInfo);
@@ -225,12 +217,14 @@ public class WiFiConnecter {
 
         /**
          * The operation started
+         *
          * @param ssid
          */
         public void onStarted(String ssid);
 
         /**
          * The operation succeeded
+         *
          * @param info
          */
         public void onSuccess(WifiInfo info);
@@ -242,9 +236,10 @@ public class WiFiConnecter {
 
         /**
          * The operation finished
-         * @param b
+         *
+         * @param isSuccess
          */
-        public void onFinished(boolean b);
+        public void onFinished(boolean isSuccess);
     }
 
 }

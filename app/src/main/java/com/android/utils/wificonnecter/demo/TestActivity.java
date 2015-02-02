@@ -86,7 +86,7 @@ public class TestActivity extends Activity implements ActionListener {
     }
 
     @Override
-    public void onFinished(boolean isSuccessed) {
+    public void onFinished(boolean isSuccess) {
         System.out.println("------onFinished------");
         mDialog.dismiss();
         Toast.makeText(TestActivity.this, "onFinished", Toast.LENGTH_SHORT).show();
