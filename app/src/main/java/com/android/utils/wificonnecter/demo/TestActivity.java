@@ -52,6 +52,12 @@ public class TestActivity extends Activity implements ActionListener {
         setCurrentSsid();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mWiFiConnecter.onPause();
+    }
+
     private void setCurrentSsid() {
         WifiInfo info = mWifiManager.getConnectionInfo();
         String s = (info == null) ? "null" : info.getSSID();

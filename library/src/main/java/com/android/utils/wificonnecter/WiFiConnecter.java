@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -81,15 +82,6 @@ public class WiFiConnecter {
             listener.onStarted(ssid);
         }
 
-        WifiInfo info = mWifiManager.getConnectionInfo();
-        if (info != null && mSsid.equalsIgnoreCase(info.getSSID())) {
-            if (listener != null) {
-                listener.onSuccess(info);
-                listener.onFinished(true);
-            }
-            return;
-        }
-
         isActiveScan = true;
         mScanner.forceScan();
     }
@@ -104,15 +96,11 @@ public class WiFiConnecter {
             List<ScanResult> results = mWifiManager.getScanResults();
             Log.d("WiFiConnecter", "results:" + results.size());
             for (ScanResult result : results) {
-                if (mSsid.equalsIgnoreCase(result.SSID)) {
+                if (mSsid.equals(result.SSID)) {
                     //            mScanner.pause();
-                    int mNumOpenNetworksKept = Settings.Secure.getInt(context.getContentResolver(),
-                            Settings.Secure.WIFI_NUM_OPEN_NETWORKS_KEPT, 10);
-                    //refer:https://code.google.com/p/android-wifi-connecter/
-                    boolean connResult = Wifi.connectToNewNetwork(context, mWifiManager,
-                            result, mPassword, mNumOpenNetworksKept);
-//                    Loger.d("result.SSID=" +result.SSID+"  newNetwork:"+newNetwork);
-                    if (!connResult) {
+                    //https://code.google.com/p/android-wifi-connecter/
+//                  Loger.d("result.SSID=" +result.SSID+"  newNetwork:"+newNetwork);
+                    if (!connect(context, result, mPassword)) {
                         if (mListener != null) {
                             mListener.onFailure();
                             mListener.onFinished(false);
@@ -130,7 +118,8 @@ public class WiFiConnecter {
             //Loger.d("mInfo:"+mInfo.toString());
             if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null &&
                     //nexus 5 have quote,sumsang don't have quote
-                    (mWifiInfo.getSSID().equals(mSsid) || mWifiInfo.getSSID().equals("\"" + mSsid + "\""))) {
+                    (mWifiInfo.getSSID().equals(mSsid) ||
+                     mWifiInfo.getSSID().equals(Wifi.convertToQuotedString(mSsid)))) {
                 if (mListener != null) {
 //                    Loger.d("success");
                     mListener.onSuccess(mWifiInfo);
@@ -139,6 +128,86 @@ public class WiFiConnecter {
                 onPause();
             }
         }
+    }
+
+    /**
+     * connect wifi
+     *
+     * @param context
+     * @param mScanResult
+     * @param mPassword
+     * @return
+     */
+
+    public boolean connect(Context context, ScanResult mScanResult, String mPassword) {
+        boolean connResult;
+
+        String security = Wifi.ConfigSec.getScanResultSecurity(mScanResult);
+        WifiConfiguration config = Wifi.getWifiConfiguration(mWifiManager, mScanResult, security);
+
+        if (config == null) {
+            connResult = newNetWork(context, mScanResult, mPassword);
+        } else {
+            final boolean isCurrentNetwork_ConfigurationStatus = config.status == WifiConfiguration.Status.CURRENT;
+            final WifiInfo info = mWifiManager.getConnectionInfo();
+            final boolean isCurrentNetwork_WifiInfo = info != null
+                    && android.text.TextUtils.equals(info.getSSID(), mScanResult.SSID)
+                    && android.text.TextUtils.equals(info.getBSSID(), mScanResult.BSSID);
+            if (isCurrentNetwork_ConfigurationStatus || isCurrentNetwork_WifiInfo) {
+                connResult = true;
+            } else {
+                connResult = configuredNetwork(context, config, security, mPassword);
+            }
+        }
+        return connResult;
+    }
+
+    /**
+     * Configure a network, and connect to it.
+     *
+     * @param context
+     * @param mScanResult
+     * @param mPassword
+     * @return
+     */
+    private boolean newNetWork(Context context, ScanResult mScanResult, String mPassword) {
+        boolean connResult;
+        int mNumOpenNetworksKept = Settings.Secure.getInt(context.getContentResolver(),
+                Settings.Secure.WIFI_NUM_OPEN_NETWORKS_KEPT, 10);
+        String mScanResultSecurity = Wifi.ConfigSec.getScanResultSecurity(mScanResult);
+        boolean mIsOpenNetwork = Wifi.ConfigSec.isOpenNetwork(mScanResultSecurity);
+        String password = mIsOpenNetwork ? null : mPassword;
+        connResult = Wifi.connectToNewNetwork(context, mWifiManager, mScanResult, password, mNumOpenNetworksKept);
+        return connResult;
+    }
+
+    /**
+     * Connect to a configured network.
+     *
+     * @param context
+     * @return
+     */
+    private boolean configuredNetwork(Context context, WifiConfiguration config) {
+        boolean connResult = false;
+        if (config != null) {
+            connResult = Wifi.connectToConfiguredNetwork(context, mWifiManager, config, false);
+        }
+        return connResult;
+    }
+
+    /**
+     * Connect to a configured network.
+     *
+     * @param context
+     * @param mPassword optional
+     * @param security
+     * @param config
+     * @return
+     */
+    private boolean configuredNetwork(Context context, WifiConfiguration config, String security, String mPassword) {
+        //optional
+        Wifi.ConfigSec.setupSecurity(config, security, mPassword);
+        return configuredNetwork(context, config);
     }
 
     public void onPause() {
