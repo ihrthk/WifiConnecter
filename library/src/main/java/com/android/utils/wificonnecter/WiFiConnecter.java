@@ -13,6 +13,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import com.farproc.wifi.connecter.Wifi;
+
 import java.util.List;
 
 /**
@@ -107,6 +109,15 @@ public class WiFiConnecter {
             for (ScanResult result : results) {
                 if (mSsid.equalsIgnoreCase(result.SSID)) {
                     //            mScanner.pause();
+
+//                    final WifiConfiguration config = Wifi.getWifiConfiguration(mWifiManager, mScanResult, mScanResultSecurity);
+                    boolean connResult = false;
+//                    if (config != null) {
+                        connResult = Wifi.connectToConfiguredNetwork(null, mWifiManager, null, false);
+//                    }
+                    if (!connResult) {
+//                        Toast.makeText(mFloating, R.string.toastFailed, Toast.LENGTH_LONG).show();
+                    }
                     boolean newNetwork = WiFi.connectToNewNetwork(mWifiManager, result, mPassword);
 //                    Loger.d("result.SSID=" +result.SSID+"  newNetwork:"+newNetwork);
                     if (!newNetwork) {
