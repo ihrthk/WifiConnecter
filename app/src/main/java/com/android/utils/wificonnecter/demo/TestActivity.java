@@ -40,8 +40,8 @@ public class TestActivity extends Activity implements ActionListener {
         tv_CurrentSsid = (TextView) findViewById(R.id.tv_currentSsid);
         et_Ssid = (EditText) findViewById(R.id.et_ssid);
         et_Password = (EditText) findViewById(R.id.et_password);
-        et_Ssid.setText("myBabyCam-25B0");
-        et_Password.setText("CC476681");
+        et_Ssid.setText("dlink-818LW-CN");
+        et_Password.setText("11111");
 
 //        et_Ssid.setText("BASIC_DIR-845L");
 //        et_Password.setText("QAZwsxbsdc707");
