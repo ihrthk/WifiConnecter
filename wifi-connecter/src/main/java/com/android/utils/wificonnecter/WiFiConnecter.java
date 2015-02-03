@@ -121,6 +121,8 @@ public class WiFiConnecter {
             NetworkInfo mInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
             WifiInfo mWifiInfo = mWifiManager.getConnectionInfo();
             //Loger.d("mInfo:"+mInfo.toString());
+            Log.d(TAG, "NETWORK_STATE_CHANGED_ACTION");
+            Log.d(TAG, "NetworkInfo mState:" + mInfo.getState());
             if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null &&
                     //nexus 5 have quote,sumsang don't have quote
                     (mWifiInfo.getSSID().equals(mSsid) ||
