@@ -26,14 +26,14 @@ public class WiFiConnecter {
 
     // Combo scans can take 5-6s to complete
     private static final int WIFI_RESCAN_INTERVAL_MS = 5 * 1000;
-
     private static final int MAX_TRY_COUNT = 3;
+    private static final String TAG = WiFiConnecter.class.getSimpleName();
 
     private Context mContext;
     private WifiManager mWifiManager;
 
     private final IntentFilter mFilter;
-    private final BroadcastReceiver mReceiver;
+    private BroadcastReceiver mReceiver;
     private final Scanner mScanner;
     private ActionListener mListener;
     private String mSsid;
@@ -53,15 +53,7 @@ public class WiFiConnecter {
         mFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
         mFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
 
-        mReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                handleEvent(context, intent);
-            }
-        };
 
-        context.registerReceiver(mReceiver, mFilter);
-        isRegistered = true;
         mScanner = new Scanner();
     }
 
@@ -78,6 +70,17 @@ public class WiFiConnecter {
         this.mSsid = ssid;
         this.mPassword = password;
 
+        isRegistered = true;
+        mReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                handleEvent(context, intent);
+            }
+        };
+
+        Log.d(TAG, "registerReceiver:" + mReceiver.toString());
+        mContext.registerReceiver(mReceiver, mFilter);
+
         if (listener != null) {
             listener.onStarted(ssid);
         }
@@ -92,15 +95,17 @@ public class WiFiConnecter {
         //TODO zls:Error receiving broadcast Intent { act=android.net.wifi.SCAN_RESULTS flg=0x4000010 }
         if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction()) && isActiveScan) {
             isActiveScan = false;
-
             List<ScanResult> results = mWifiManager.getScanResults();
-            Log.d("WiFiConnecter", "results:" + results.size());
+            Log.d(TAG, "scan results:" + results.toString());
             for (ScanResult result : results) {
                 if (mSsid.equals(result.SSID)) {
                     //            mScanner.pause();
+                    Log.d(TAG, "find result:" + result);
                     //https://code.google.com/p/android-wifi-connecter/
 //                  Loger.d("result.SSID=" +result.SSID+"  newNetwork:"+newNetwork);
-                    if (!connect(context, result, mPassword)) {
+                    boolean connectResult = connect(context, result, mPassword);
+                    Log.d(TAG, "connect result:" + connectResult);
+                    if (!connectResult) {
                         if (mListener != null) {
                             mListener.onFailure();
                             mListener.onFinished(false);
@@ -119,7 +124,7 @@ public class WiFiConnecter {
             if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null &&
                     //nexus 5 have quote,sumsang don't have quote
                     (mWifiInfo.getSSID().equals(mSsid) ||
-                     mWifiInfo.getSSID().equals(Wifi.convertToQuotedString(mSsid)))) {
+                            mWifiInfo.getSSID().equals(Wifi.convertToQuotedString(mSsid)))) {
                 if (mListener != null) {
 //                    Loger.d("success");
                     mListener.onSuccess(mWifiInfo);
@@ -146,6 +151,7 @@ public class WiFiConnecter {
         WifiConfiguration config = Wifi.getWifiConfiguration(mWifiManager, mScanResult, security);
 
         if (config == null) {
+            Log.d(TAG, "start connect new network");
             connResult = newNetWork(context, mScanResult, mPassword);
         } else {
             final boolean isCurrentNetwork_ConfigurationStatus = config.status == WifiConfiguration.Status.CURRENT;
@@ -156,6 +162,7 @@ public class WiFiConnecter {
             if (isCurrentNetwork_ConfigurationStatus || isCurrentNetwork_WifiInfo) {
                 connResult = true;
             } else {
+                Log.d(TAG, "start connect configure network");
                 connResult = configuredNetwork(context, config, security, mPassword);
             }
         }
@@ -212,6 +219,7 @@ public class WiFiConnecter {
 
     public void onPause() {
         if (isRegistered) {
+            Log.d(TAG, "unregisterReceiver:" + mReceiver.toString());
             mContext.unregisterReceiver(mReceiver);
             isRegistered = false;
         }
@@ -249,6 +257,7 @@ public class WiFiConnecter {
 
         @Override
         public void handleMessage(Message message) {
+            Log.d(TAG, "mRetry:" + mRetry);
             if (mRetry < MAX_TRY_COUNT) {
                 mRetry++;
                 isActiveScan = true;
@@ -258,6 +267,7 @@ public class WiFiConnecter {
                 }
                 //TODO startScan return false?
                 boolean startScan = mWifiManager.startScan();
+                Log.d(TAG, "startScan:" + startScan);
                 // exe scan fail(bind mechanism)
                 if (!startScan) {
                     if (mListener != null) {
