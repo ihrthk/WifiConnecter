@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="android-wifi-connecter-1.0">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/wifi-connecter/build/intermediates/exploded-aar/me.zhangls/android-wifi-connecter/1.0/res" />
+      <root url="jar://$PROJECT_DIR$/wifi-connecter/build/intermediates/exploded-aar/me.zhangls/android-wifi-connecter/1.0/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
