@@ -12,6 +12,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -54,7 +55,7 @@ public class WiFiConnecter {
         mFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
 
 
-        mScanner = new Scanner();
+        mScanner = new Scanner(Looper.getMainLooper());
     }
 
 
@@ -239,6 +240,10 @@ public class WiFiConnecter {
     @SuppressLint("HandlerLeak")
     private class Scanner extends Handler {
         private int mRetry = 0;
+
+        Scanner(Looper looper) {
+            super(looper);
+        }
 
         void resume() {
             if (!hasMessages(0)) {
